@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="ISO-8859-1">
+<title>ASCII/Latin-1 Generator</title>
+<style>
+body {
+    font-family: monospace;
+    background-color: #000;
+    color: #0f0;
+    padding: 20px;
+}
+label { display: block; margin-top: 10px; }
+textarea {
+    width: 100%;
+    height: 300px;
+    margin-top: 10px;
+    background-color: #111;
+    color: #0f0;
+    border: none;
+    font-family: monospace;
+    white-space: pre;
+}
+button { margin-top: 10px; padding: 5px 10px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<h1>ASCII/Latin-1 Wirrwarr Generator</h1>
+
+<label>
+    Zeichensatz:
+    <select id="charset">
+        <option value="ascii">ASCII (33–126)</option>
+        <option value="latin1">Latin-1 (33–255)</option>
+    </select>
+</label>
+
+<label>
+    Zeilen / Gesamtzeichen: <input type="number" id="lines" value="20" min="1">
+</label>
+
+<label>
+    Zeichen pro Zeile: <input type="number" id="charsPerLine" value="60" min="1">
+</label>
+
+<label>
+    <input type="checkbox" id="totalChars"> Zeilen-Feld als Gesamtanzahl Zeichen
+</label>
+
+<button onclick="generate()">Generieren</button>
+
+<textarea id="output" readonly></textarea>
+
+<script>
+function randomChar(set){
+    let code;
+    if(set === "ascii"){
+        code = Math.floor(Math.random() * (126-33+1)) + 33;
+    } else {
+        code = Math.floor(Math.random() * (255-33+1)) + 33;
+    }
+    return String.fromCharCode(code);
+}
+
+function generateString(length, set){
+    let str = '';
+    for(let i=0; i<length; i++){
+        let char;
+        do {
+            char = randomChar(set);
+        } while (
+            i>=2 &&
+            char.charCodeAt(0) === str.charCodeAt(i-1)+1 &&
+            char.charCodeAt(0) === str.charCodeAt(i-2)+2
+        );
+        str += char;
+    }
+    return str;
+}
+
+function generateText(lines, charsPerLine, set){
+    let result = '';
+    for(let i=0; i<lines; i++){
+        result += generateString(charsPerLine, set) + '\n';
+    }
+    return result;
+}
+
+function generate(){
+    const set = document.getElementById("charset").value;
+    const totalCheckbox = document.getElementById("totalChars").checked;
+    let lines = parseInt(document.getElementById("lines").value);
+    let charsPerLine = parseInt(document.getElementById("charsPerLine").value);
+    let output = '';
+
+    if(totalCheckbox){
+        let total = lines; // Zeilenfeld als Gesamtanzahl Zeichen
+        let fullLines = Math.floor(total / charsPerLine);
+        let remainder = total % charsPerLine;
+        output = generateText(fullLines, charsPerLine, set);
+        if(remainder > 0){
+            output += generateString(remainder, set) + '\n';
+        }
+    } else {
+        output = generateText(lines, charsPerLine, set);
+    }
+
+    document.getElementById("output").value = output;
+}
+</script>
+
+</body>
+</html>
