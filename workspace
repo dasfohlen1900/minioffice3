@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeropus Workspace</title>
+
+<style>
+@font-face {
+  font-family: 'Aeropus UI II';
+  src: url('/fonts/AeropusUIII-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Aeropus UI II', system-ui, sans-serif;
+  background: #1e1e1e;
+  color: #fff;
+}
+
+header, footer {
+  background: #111;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1, footer p {
+  margin: 0;
+  font-weight: normal;
+}
+
+header nav a, footer nav a {
+  color: #00b37e;
+  margin-left: 1rem;
+  text-decoration: none;
+}
+
+header nav a:hover, footer nav a:hover {
+  text-decoration: underline;
+}
+
+main {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 2rem;
+  gap: 1.5rem;
+  justify-content: flex-start;
+}
+
+.tile {
+  background: #2a2a2a;
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-align: center;
+}
+
+.tile:hover {
+  background: #333;
+}
+
+.tile-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.tile-label {
+  font-size: 1rem;
+}
+
+.logout-btn {
+  background: #b30000;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #900;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Aeropus Workspace</h1>
+  <nav>
+    <a href="/startseite.html">Startseite</a>
+    <a href="/workspace.html">Workspace</a>
+    <button id="logoutBtn" class="logout-btn">Logout</button>
+  </nav>
+</header>
+
+<main>
+  <div class="tile" onclick="alert('Timer starten')">
+    <div class="tile-icon">⏱️</div>
+    <div class="tile-label">Timer</div>
+  </div>
+
+  <div class="tile" onclick="alert('Kalender öffnen')">
+    <div class="tile-icon">📅</div>
+    <div class="tile-label">Kalender</div>
+  </div>
+
+  <div class="tile" onclick="alert('Umfrage erstellen')">
+    <div class="tile-icon">📊</div>
+    <div class="tile-label">Umfragen</div>
+  </div>
+
+  <!-- Weitere Gadgets hier -->
+</main>
+
+<footer>
+  <p>&copy; 2026 Aeropus</p>
+  <nav>
+    <a href="/impressum.html">Impressum</a>
+    <a href="/datenschutz.html">Datenschutz</a>
+  </nav>
+</footer>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://ovpwauuptzyhzlbhgcex.supabase.co',
+  'sb_publishable_22d222QCrTSkrLxo6nklWQ_OPjwTDAH'
+);
+
+// Prüft Session
+async function checkSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    // Nicht eingeloggt → weiterleiten
+    window.location.href = '/login.html';
+  }
+}
+
+checkSession();
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  await supabase.auth.signOut();
+  window.location.href = '/login.html';
+});
+</script>
+
+</body>
+</html>
