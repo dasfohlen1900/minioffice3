@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeropus Uhr</title>
+
+<style>
+@font-face {
+  font-family: 'Aeropus UI II';
+  src: url('/fonts/AeropusUIII-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Aeropus UI II', system-ui, sans-serif;
+  background: #1e1e1e;
+  color: #fff;
+}
+
+header, footer {
+  background: #111;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1, footer p {
+  margin: 0;
+  font-weight: normal;
+}
+
+header nav a, footer nav a {
+  color: #00b37e;
+  margin-left: 1rem;
+  text-decoration: none;
+}
+
+header nav a:hover, footer nav a:hover {
+  text-decoration: underline;
+}
+
+main {
+  padding: 2rem;
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  flex: 1;
+  padding: 0.8rem;
+  background: #2a2a2a;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: background 0.2s;
+}
+
+.tab:hover {
+  background: #333;
+}
+
+.tab.active {
+  background: #00b37e;
+}
+
+.tab-content {
+  background: #2a2a2a;
+  padding: 2rem;
+  border-radius: 0 8px 8px 8px;
+  min-height: 200px;
+  text-align: center;
+}
+
+canvas {
+  background: #1e1e1e;
+}
+
+button {
+  background: #00b37e;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #02976a;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Aeropus Uhr</h1>
+  <nav>
+    <a href="/workspace.html">Workspace</a>
+    <button id="logoutBtn">Logout</button>
+  </nav>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" data-tab="analog">Analoge Uhr</div>
+    <div class="tab" data-tab="digital">Digitale Uhr</div>
+    <div class="tab" data-tab="timer">Timer</div>
+    <div class="tab" data-tab="stopwatch">Stoppuhr</div>
+  </div>
+
+  <div id="analog" class="tab-content">
+    <canvas id="analogClock" width="200" height="200"></canvas>
+  </div>
+  <div id="digital" class="tab-content" style="display:none;">
+    <h2 id="digitalClock"></h2>
+  </div>
+  <div id="timer" class="tab-content" style="display:none;">
+    <h3>Timer (Sekunden)</h3>
+    <input type="number" id="timerInput" placeholder="Sekunden">
+    <button id="startTimer">Start</button>
+    <p id="timerDisplay"></p>
+  </div>
+  <div id="stopwatch" class="tab-content" style="display:none;">
+    <h3>Stoppuhr</h3>
+    <button id="startStopwatch">Start</button>
+    <button id="stopStopwatch">Stop</button>
+    <button id="resetStopwatch">Reset</button>
+    <p id="stopwatchDisplay">0.0 s</p>
+  </div>
+</main>
+
+<footer>
+  <p>&copy; 2026 Aeropus</p>
+  <nav>
+    <a href="/impressum.html">Impressum</a>
+    <a href="/datenschutz.html">Datenschutz</a>
+  </nav>
+</footer>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://ovpwauuptzyhzlbhgcex.supabase.co',
+  'sb_publishable_22d222QCrTSkrLxo6nklWQ_OPjwTDAH'
+);
+
+// Session prüfen
+async function checkSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) window.location.href = '/login.html';
+}
+checkSession();
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  await supabase.auth.signOut();
+  window.location.href = '/login.html';
+});
+
+// Tabs
+const tabs = document.querySelectorAll('.tab');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).style.display = 'block';
+  });
+});
+
+// --- Digitale Uhr ---
+function updateDigitalClock() {
+  const now = new Date();
+  document.getElementById('digitalClock').textContent = now.toLocaleTimeString();
+}
+setInterval(updateDigitalClock, 1000);
+updateDigitalClock();
+
+// --- Analoge Uhr ---
+const canvas = document.getElementById('analogClock');
+const ctx = canvas.getContext('2d');
+const radius = canvas.height / 2;
+ctx.translate(radius, radius);
+
+function drawClock() {
+  const now = new Date();
+  ctx.clearRect(-radius, -radius, canvas.width, canvas.height);
+
+  // Kreis
+  ctx.beginPath();
+  ctx.arc(0, 0, radius-5, 0, 2*Math.PI);
+  ctx.fillStyle = '#1e1e1e';
+  ctx.fill();
+  ctx.strokeStyle = '#00b37e';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Stunden, Minuten, Sekunden
+  const sec = now.getSeconds();
+  const min = now.getMinutes();
+  const hr = now.getHours()%12;
+
+  // Stunde
+  ctx.save();
+  ctx.rotate(hr*Math.PI/6 + min*Math.PI/360);
+  ctx.strokeStyle = '#00b37e';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(0,-radius*0.5);
+  ctx.stroke();
+  ctx.restore();
+
+  // Minute
+  ctx.save();
+  ctx.rotate(min*Math.PI/30 + sec*Math.PI/1800);
+  ctx.strokeStyle = '#00b37e';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(0,-radius*0.8);
+  ctx.stroke();
+  ctx.restore();
+
+  // Sekunde
+  ctx.save();
+  ctx.rotate(sec*Math.PI/30);
+  ctx.strokeStyle = '#b30000';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(0,-radius*0.9);
+  ctx.stroke();
+  ctx.restore();
+}
+setInterval(drawClock, 1000);
+drawClock();
+
+// --- Timer ---
+let timerInterval;
+document.getElementById('startTimer').addEventListener('click', ()=>{
+  clearInterval(timerInterval);
+  let seconds = parseInt(document.getElementById('timerInput').value);
+  const display = document.getElementById('timerDisplay');
+  display.textContent = seconds;
+  timerInterval = setInterval(()=>{
+    seconds--;
+    display.textContent = seconds;
+    if(seconds<=0) clearInterval(timerInterval);
+  }, 1000);
+});
+
+// --- Stoppuhr ---
+let stopwatchTime = 0;
+let stopwatchInterval;
+const swDisplay = document.getElementById('stopwatchDisplay');
+
+document.getElementById('startStopwatch').addEventListener('click', ()=>{
+  clearInterval(stopwatchInterval);
+  stopwatchInterval = setInterval(()=>{
+    stopwatchTime += 0.1;
+    swDisplay.textContent = stopwatchTime.toFixed(1) + ' s';
+  }, 100);
+});
+
+document.getElementById('stopStopwatch').addEventListener('click', ()=>{
+  clearInterval(stopwatchInterval);
+});
+
+document.getElementById('resetStopwatch').addEventListener('click', ()=>{
+  clearInterval(stopwatchInterval);
+  stopwatchTime = 0;
+  swDisplay.textContent = '0.0 s';
+});
+</script>
+
+</body>
+</html>
