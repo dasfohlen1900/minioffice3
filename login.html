@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aeropus Login</title>
 
-<!-- Font preload & inline @font-face -->
 <style>
 @font-face {
   font-family: 'Aeropus UI II';
@@ -63,6 +62,12 @@ button {
 button:hover {
   background: #02976a;
 }
+
+p {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #555;
+}
 </style>
 
 </head>
@@ -70,10 +75,12 @@ button:hover {
 
 <div class="login-container">
   <h2>Login mit Aeropus Account</h2>
-  <form id="magicForm">
-    <input type="email" id="email" placeholder="Deine E-Mail" required>
-    <button type="submit">Login per Magic Link</button>
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="E-Mail" required>
+    <input type="password" id="password" placeholder="Passwort" required>
+    <button type="submit">Login</button>
   </form>
+  <p>Noch keinen Account? Dann registriere dich <a href="/register.html">hier</a>.</p>
 </div>
 
 <script type="module">
@@ -84,16 +91,22 @@ const supabase = createClient(
   'sb_publishable_22d222QCrTSkrLxo6nklWQ_OPjwTDAH'
 );
 
-async function loginWithMagicLink(event) {
+// Login mit E-Mail + Passwort
+async function login(event) {
   event.preventDefault();
   const email = document.getElementById('email').value;
-  const { data, error } = await supabase.auth.signInWithOtp({ email });
+  const password = document.getElementById('password').value;
 
-  if (error) alert(error.message);
-  else alert('Check your email für den Aeropus Login-Link!');
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    alert(error.message);
+  } else {
+    window.location.href = '/workspace.html'; // Weiterleitung nach Login
+  }
 }
 
-document.getElementById('magicForm').addEventListener('submit', loginWithMagicLink);
+document.getElementById('loginForm').addEventListener('submit', login);
 </script>
 
 </body>
