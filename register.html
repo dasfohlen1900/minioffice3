@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeropus Registrierung</title>
+
+<style>
+@font-face {
+  font-family: 'Aeropus UI II';
+  src: url('/fonts/AeropusUIII-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: 'Aeropus UI II', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f5f5f5;
+}
+
+.register-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  width: 360px;
+}
+
+.register-card h2 {
+  margin-bottom: 1rem;
+  color: #111;
+  text-align: center;
+}
+
+.register-card p.subtitle {
+  font-size: 0.95rem;
+  color: #555;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+input {
+  width: 100%;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+button {
+  width: 100%;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  background: #00b37e;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #02976a;
+}
+
+.captcha-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.captcha-code {
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 1.2rem;
+  background: #eee;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  letter-spacing: 2px;
+}
+
+.reload-captcha {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #00b37e;
+}
+
+.reload-captcha:hover {
+  text-decoration: underline;
+}
+
+p.login-link {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 1rem;
+}
+
+a {
+  color: #00b37e;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+
+<div class="register-card">
+  <h2>Erstelle hier deinen Aeropus Account</h2>
+  <p class="subtitle">Kostenlos und einfach <button id="startButton">Loslegen</button></p>
+
+  <form id="registerForm">
+    <input type="email" id="email" placeholder="E-Mail" required>
+    <input type="email" id="emailConfirm" placeholder="E-Mail wiederholen" required>
+    
+    <input type="password" id="password" placeholder="Passwort" required>
+    <input type="password" id="passwordConfirm" placeholder="Passwort wiederholen" required>
+
+    <div class="captcha-container">
+      <span id="captchaCode" class="captcha-code"></span>
+      <span id="reloadCaptcha" class="reload-captcha">↻</span>
+    </div>
+    <input type="text" id="captchaInput" placeholder="Gib den Code ein" required>
+
+    <button type="submit">Registrieren</button>
+  </form>
+
+  <p class="login-link">Schon einen Account? <a href="/login.html">Login hier</a></p>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://ovpwauuptzyhzlbhgcex.supabase.co',
+  'sb_publishable_22d222QCrTSkrLxo6nklWQ_OPjwTDAH'
+);
+
+// AeroCaptcha-Zeichen
+const CAPTCHA_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890#+*?';
+let currentCaptcha = '';
+
+// Generiert neuen 8-stelligen Code
+function generateCaptcha() {
+  let code = '';
+  for (let i=0; i<8; i++) {
+    code += CAPTCHA_CHARS.charAt(Math.floor(Math.random() * CAPTCHA_CHARS.length));
+  }
+  currentCaptcha = code;
+  document.getElementById('captchaCode').textContent = code;
+}
+
+document.getElementById('reloadCaptcha').addEventListener('click', generateCaptcha);
+generateCaptcha(); // initial
+
+// Passwortprüfung
+function validatePassword(pw) {
+  if (pw.length < 8) return false;
+  if (!/[A-Z]/.test(pw)) return false;
+  if (!/[a-z]/.test(pw)) return false;
+  if (!/[0-9]/.test(pw)) return false;
+  if (!/[#+*?]/.test(pw)) return false;
+  if (!/^[\x20-\x7E]+$/.test(pw)) return false; // ASCII only
+  return true;
+}
+
+// Form Submission
+document.getElementById('registerForm').addEventListener('submit', async (event)=>{
+  event.preventDefault();
+
+  const email = document.getElementById('email').value.trim();
+  const emailConfirm = document.getElementById('emailConfirm').value.trim();
+  const password = document.getElementById('password').value;
+  const passwordConfirm = document.getElementById('passwordConfirm').value;
+  const captchaInput = document.getElementById('captchaInput').value.trim();
+
+  // E-Mail prüfen
+  if (email !== emailConfirm) { alert('⛔ E-Mails stimmen nicht überein!'); return; }
+
+  // Passwort prüfen
+  if (password !== passwordConfirm) { alert('⛔ Passwörter stimmen nicht überein!'); return; }
+  if (!validatePassword(password)) {
+    alert('⛔ Passwort erfüllt nicht die Anforderungen:\n- min. 8 Zeichen\n- min. 1 Groß- & 1 Kleinbuchstabe\n- min. 1 Zahl\n- min. 1 Sonderzeichen (# + * ?)\n- nur ASCII');
+    return;
+  }
+
+  // Captcha prüfen
+  if (captchaInput !== currentCaptcha) { alert('⛔ Captcha stimmt nicht!'); generateCaptcha(); return; }
+
+  // Supabase Registrierung
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) { alert(error.message); return; }
+
+  alert('Account erstellt! Bitte prüfe deine E-Mail zur Bestätigung.');
+  window.location.href = '/login.html';
+});
+</script>
+
+</body>
+</html>
